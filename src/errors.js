@@ -1,5 +1,3 @@
-import utils from "./utils"
-
 export function newError({ status, data }) {
   var klass = null
   switch (status) {
