@@ -2,6 +2,7 @@ import utils from "./utils";
 import { request } from "./request";
 import { API_HOST, CLIENT_ID, CLIENT_SECRET } from "./constants";
 import { Vehicle } from "./vehicle";
+import { Summon } from "./summon";
 global.pd = console.log.bind(console);
 
 export default class Tesla {
@@ -15,7 +16,7 @@ export default class Tesla {
       utils.pick(options, "email", "password", "refreshToken", "distanceUnit")
     );
     request.defaults.distanceUnit = this.distanceUnit;
-    this.login();
+    return this;
   }
 
   login() {
@@ -52,23 +53,26 @@ export default class Tesla {
     });
   }
 
-  vehicles() {
-    return request
-      .get("/vehicles")
-      .then(res => res.data["response"].map(v => new Vehicle(this, v)));
+  async vehicles() {
+    const res = await request.get("/vehicles");
+    return res.data.response.map(v => new Vehicle(this, v));
   }
 
-  getVehicle(vehicleId = "") {
-    return this.vehicles().then(vehicles => {
-      if (vehicleId) {
-        return vehicles.find(v => v.vehicleId === vehicleId);
-      } else {
-        return vehicles[0];
-      }
-    });
+  async getVehicle(vehicleId = "") {
+    const vehicles = await this.vehicles();
+    if (vehicleId) {
+      return vehicles.find(v => v.vehicleId === vehicleId);
+    } else {
+      return vehicles[0];
+    }
   }
 
-  products() {
-    return request.get("/products").then(res => res.data["response"]);
+  async products() {
+    const res = await request.get("/products");
+    return res.data.response;
+  }
+
+  summon(vehicle) {
+    return new Summon(vehicle);
   }
 }

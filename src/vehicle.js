@@ -14,6 +14,7 @@ export class Vehicle {
   constructor(tesla, props) {
     this.tesla = tesla;
     Object.assign(this, props);
+    return this;
   }
 
   stream() {
@@ -40,21 +41,25 @@ export class Vehicle {
   get(path) {
     return request
       .get(`/vehicles/${this.idS}${path}`)
-      .then(res => res.data["response"]);
+      .then(res => res.data.response);
   }
 
   post(path, data = {}) {
     return request
       .post(`/vehicles/${this.idS}${path}`, data)
-      .then(res => res.data["response"]);
+      .then(res => res.data.response);
   }
 
   mobileEnabled() {
     return this.get("/mobile_enabled");
   }
 
+  dataRequest(key) {
+    return this.get(`/data_request/${key}`);
+  }
+
   chargeState() {
-    return this.get("/data_request/charge_state").then(charge => {
+    return this.dataRequest("charge_state").then(charge => {
       // Add a extra time field
       charge.time = new Date();
       return charge;
@@ -62,19 +67,19 @@ export class Vehicle {
   }
 
   climateState() {
-    return this.get("/data_request/climate_state");
+    return this.dataRequest("climate_state");
   }
 
   driveState() {
-    return this.get("/data_request/drive_state");
+    return this.dataRequest("drive_state");
   }
 
   guiSettings() {
-    return this.get("/data_request/gui_settings");
+    return this.dataRequest("gui_settings");
   }
 
   vehicleState() {
-    return this.get("/data_request/vehicle_state");
+    return this.dataRequest("vehicle_state");
   }
 
   wakeUp() {
@@ -207,7 +212,7 @@ export class Vehicle {
     // must be near current location of the car for close operation to succeed
     return this.driveState()
       .then(data => {
-        this.windowControl({command: "close", lat: data.latitude, lon: data.longitude})
+        return this.windowControl({command: "close", lat: data.latitude, lon: data.longitude})
       });
   }
 
