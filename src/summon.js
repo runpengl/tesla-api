@@ -9,12 +9,14 @@ export class Summon {
     
     this.vehicle = vehicle;
 
-    const encodedAuthStr = `${this.vehicle.tesla.email}:${this.vehicle.tokens[0]}`.toString(
+    const { tesla, vehicleId, tokens } = this.vehicle;
+
+    const encodedAuthStr = new Buffer(`${tesla.email}:${tokens[0]}`).toString(
       "base64"
     );
 
     this.socket = new WebSocket(
-      `wss://${STREAM_HOST}/connect/${this.vehicle.vehicle_id}`,
+      `wss://${STREAM_HOST}/connect/${vehicleId}`,
       null,
       {
         headers: {

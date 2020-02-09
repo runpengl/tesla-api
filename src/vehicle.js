@@ -1,6 +1,7 @@
 import { request } from "./request";
 //import {Stream} from "./stream"
 import { cdebug } from "./console";
+import { Summon } from "./summon";
 
 export class Seat {
   DRIVER = 0
@@ -27,9 +28,9 @@ export class Vehicle {
 
   async refresh() {
     try {
-      var vehicles = await this.tesla.vehicles();
-      return new Promise((resolve, reject) => {
-        var vehicle = vehicles.find(v => v.idS === this.idS);
+      const vehicles = await this.tesla.vehicles();
+      return new Promise(resolve => {
+        const vehicle = vehicles.find(v => v.idS === this.idS);
         Object.assign(this, vehicle);
         resolve(this);
       });
@@ -184,10 +185,6 @@ export class Vehicle {
     return this.post("/command/remote_start_drive", data);
   }
 
-  trunkOpen(data) {
-    return this.post("/command/trunk_open", data);
-  }
-
   actuateTrunk(data) {
     return this.post("/command/actuate_trunk", data);
   }
@@ -258,6 +255,11 @@ export class Vehicle {
 
   cancelSoftwareUpdate() {
     return this.post("/command/cancel_software_update");
+  }
+
+  async autopark() {
+    await this.refresh();
+    return new Summon(this);
   }
 
 }

@@ -22,9 +22,9 @@ teslaCli
     if (vehicle) {
       const vehicleState = await vehicle.vehicleState();
       console.log("Vehicle state: ", vehicleState);
-      const vehicleSummon = teslaCli.summon(vehicle);
-      // await vehicleSummon.forward();
-      // await vehicleSummon.abort();
+      const vehicleAutopark = await vehicle.autopark();
+      // await vehicleAutopark.forward();
+      // await vehicleAutopark.abort();
     } else {
       console.log("No vehicle found");
     }
