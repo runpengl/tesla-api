@@ -4,7 +4,8 @@
   "description": "Unofficial API Wrapper for Tesla Model S and X",
   "main": "index.js",
   "scripts": {
-    "prepublish": "./ake build"
+    "prepublish": "./ake build",
+    "dev": "./ake watch"
   },
   "files": [
     "index.js",
@@ -12,7 +13,7 @@
   ],
   "author": "",
   "license": "MIT",
-  "repository": "gutenye/tesla-api",
+  "repository": "runpengl/tesla-api",
   "dependencies": {
     "axios": "^0.18.0",
     "convert-units": "^2.3.4",
