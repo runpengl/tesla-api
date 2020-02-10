@@ -1,32 +1,34 @@
-const WebSocket = require("ws");
-
+const WebSocket = require("isomorphic-ws");
+import { WebSocket as MockWebSocket } from "mock-socket";
 import { STREAM_HOST } from "./constants";
 
 const noop = () => {};
 
 export class Summon {
-  constructor(vehicle, { onOpen = noop, onSummonReady = noop } = {}) {
+  constructor(vehicle, { onOpen = noop, onSummonReady = noop } = {}, opts = { host:  STREAM_HOST, protocol: "wss", headers: true }) {
     
     this.vehicle = vehicle;
 
     const { tesla, vehicleId, tokens } = this.vehicle;
 
+    const socketUrl = `${opts.proto}://${opts.host}/connect/${vehicleId}`;
+
     const encodedAuthStr = new Buffer(`${tesla.email}:${tokens[0]}`).toString(
       "base64"
     );
-
-    this.socket = new WebSocket(
-      `wss://${STREAM_HOST}/connect/${vehicleId}`,
+    
+    this.socket = opts.headers ? new WebSocket(
+      socketUrl,
       null,
       {
         headers: {
           Authorization: `Basic ${encodedAuthStr}`
         }
       }
-    );
+    ) : new MockWebSocket(socketUrl);
 
-    this.socket.on("message", data => {
-      const message = JSON.parse(data);
+    this.socket.onmessage = event => {
+      const message = JSON.parse(event.data);
       switch (message.msg_type) {
         case "control:hello":
           this.beginHeartbeat(message.autopark.heartbeat_frequency);
@@ -36,7 +38,7 @@ export class Summon {
           message.autopark_state === "ready" && onSummonReady();
           break;
       }
-    });
+    }
 
     return this;
   }

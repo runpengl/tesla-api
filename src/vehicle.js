@@ -51,18 +51,32 @@ export class Vehicle {
       .then(res => res.data.response);
   }
 
+  dataRequest(key) {
+    return this.get(`/data_request/${key}`);
+  }
+
+  command(key, data = {}) {
+    return this.post(`/command/${key}`, data);
+  }
+
+  // State
+
+  data() {
+    return this.get("/vehicle_data");
+  }
+
   mobileEnabled() {
     return this.get("/mobile_enabled");
   }
 
-  dataRequest(key) {
-    return this.get(`/data_request/${key}`);
+  nearbyChargingSites() {
+    return this.get("/nearby_charging_sites");
   }
 
   chargeState() {
     return this.dataRequest("charge_state").then(charge => {
       // Add a extra time field
-      charge.time = new Date();
+      charge.time = new Date().getTime();
       return charge;
     });
   }
@@ -83,63 +97,75 @@ export class Vehicle {
     return this.dataRequest("vehicle_state");
   }
 
+  vehicleConfig() {
+    return this.dataRequest("vehicle_config");
+  }
+
+  // Commands
+
   wakeUp() {
     return this.post("/wake_up");
   }
 
-  setValetMode(data) {
-    return this.post("/command/set_valet_mode", data);
+  setValetMode(on, password = null) {
+    return this.command("set_valet_mode", { on, password });
   }
 
   resetValetPin() {
-    return this.post("/command/reset_valet_pin");
+    return this.command("reset_valet_pin");
   }
 
+  // Charging
+
   chargePortDoorOpen() {
-    return this.post("/command/charge_port_door_open");
+    return this.command("charge_port_door_open");
+  }
+
+  chargePortDoorClose() {
+    return this.command("charge_port_door_close");
   }
 
   chargeStandard() {
-    return this.post("/command/charge_standard");
+    return this.command("charge_standard");
   }
 
   chargeMaxRange() {
-    return this.post("/command/charge_max_range");
+    return this.command("charge_max_range");
   }
 
-  setChargeLimit(data) {
-    return this.post("/command/set_charge_limit", data);
+  setChargeLimit(percent) {
+    return this.command("set_charge_limit", { percent });
   }
 
   chargeStart() {
-    return this.post("/command/charge_start");
+    return this.command("charge_start");
   }
 
-  chargeStop(data) {
-    return this.post("/command/charge_stop");
+  chargeStop() {
+    return this.command("charge_stop");
   }
 
   flashLights() {
-    return this.post("/command/flash_lights");
+    return this.command("flash_lights");
   }
 
   honkHorn() {
-    return this.post("/command/honk_horn");
+    return this.command("honk_horn");
   }
 
   doorUnlock() {
-    return this.post("/command/door_unlock");
+    return this.command("door_unlock");
   }
 
   doorLock() {
-    return this.post("/command/door_lock");
+    return this.command("door_lock");
   }
 
-  setTemps(data) {
-    const MIN_TEMP_C = 18;
+  // Climate
+
+  setTemps(driver_temp, passenger_temp) {
+    const MIN_TEMP_C = 15;
     const MAX_TEMP_C = 30;
-    const driver_temp = data.driver_temp;
-    const passenger_temp = data.passenger_temp;
     if (!passenger_temp) {
       passenger_temp = driver_temp;
     }
@@ -149,56 +175,63 @@ export class Vehicle {
     if (!passenger_temp || passenger_temp < MIN_TEMP_C || passenger_temp > MAX_TEMP_C) {
       return Promise.reject(`Passenger temp must be between ${MIN_TEMP_C}-${MAX_TEMP_C} C`);
     }
-    return this.post("/command/set_temps", data);
+    return this.command("set_temps", { driver_temp, passenger_temp });
   }
 
   autoConditioningStart() {
-    return this.post("/command/auto_conditioning_start");
+    return this.command("auto_conditioning_start");
   }
 
   autoConditioningStop() {
-    return this.post("/command/auto_conditioning_stop");
+    return this.command("auto_conditioning_stop");
   }
 
   seatHeaterRequest(data) {
-    return this.post("/command/remote_seat_heater_request", data);
+    return this.command("remote_seat_heater_request", data);
   }
 
-  heatSeats(data) {
+  heatSeats(seats, level) {
     const MAX_HEAT_LEVEL = 3;
-    data.level = parseInt(data.level || 0);
-    data.seats = data.seats || [];
+    level = parseInt(level || 0);
+    seats = seats || [];
     if (data.level > MAX_HEAT_LEVEL) {
       return Promise.reject(`Heat level must be between 0-${MAX_HEAT_LEVEL}`);
     }
     return Promise.all(
-      data.seats.map(seatCode => this.seatHeaterRequest({ heater: seatCode, level: data.level }))
+      seats.map(seatCode => this.seatHeaterRequest({ heater: seatCode, level }))
     );
   }
 
-  sunRoofControl(data) {
-    return this.post("/command/sun_roof_control", data);
+  setSteeringWheelHeater(on) {
+    return this.command("remote_steering_wheel_heater_request", { on });
   }
 
-  remoteStartDrive(data) {
-    data.password = this.tesla.password;
-    return this.post("/command/remote_start_drive", data);
+  sunRoofControl(state) {
+    return this.command("sun_roof_control", { state });
+  }
+
+  sunRoofMove(percent) {
+    return this.command("sun_roof_control", { state: "move", percent });
+  }
+
+  remoteStartDrive() {
+    return this.command("remote_start_drive", { password: this.tesla.password });
   }
 
   actuateTrunk(data) {
-    return this.post("/command/actuate_trunk", data);
+    return this.command("actuate_trunk", data);
   }
 
-  toggleRearTrunk() {
-    return this.actuateTrunk({which_trunk: "rear"});
+  toggleTrunk() {
+    return this.actuateTrunk({ which_trunk: "rear" });
   }
 
-  toggleFrontTrunk() {
-    return this.actuateTrunk({which_trunk: "front"});
+  toggleFrunk() {
+    return this.actuateTrunk({ which_trunk: "front" });
   }
 
   windowControl(data) {
-    return this.post("/command/window_control", data);
+    return this.command("window_control", data);
   }
 
   ventWindows() {
@@ -213,49 +246,86 @@ export class Vehicle {
       });
   }
 
-  setSpeedLimit(data) {
-    if (!data || !data.limit_mph || !parseInt(data.limit_mph)) {
-      return Promise.reject("Invalid `limit_mph` value")
+  setSpeedLimit(limitMph) {
+    const MIN_SPEED_LIMIT_MPH = 50;
+    const MAX_SPEED_LIMIT_MPH = 90;
+    if (!limitMph || !parseInt(limitMph)) {
+      return Promise.reject("Invalid `limitMph` value")
     }
-    data.limit_mph = parseInt(data.limit_mph);
-    if (data.limit_mph < 50 || data.limit_mph > 90) {
-      return Promise.reject("Speed limit in MPH must be between 50-90")
+    limitMph = parseInt(limitMph);
+    if (limitMph < MIN_SPEED_LIMIT_MPH || limitMph > MAX_SPEED_LIMIT_MPH) {
+      return Promise.reject(`Speed limit in MPH must be between ${MIN_SPEED_LIMIT_MPH}-${MAX_SPEED_LIMIT_MPH}`);
     }
-    return this.post("/command/speed_limit_set_limit", data)
+    return this.command("speed_limit_set_limit", { limit_mph: limitMph });
   }
 
-  speedLimitActivate(data) {
-    if (data && data.pin && /^\d{4}$/.test(data.pin)) {
-      this.speed_limit_pin = data.pin;
-      return this.post("/command/speed_limit_activate", data);
+  activateSpeedLimit(pin) {
+    if (pin && /^\d{4}$/.test(pin)) {
+      this.speed_limit_pin = pin;
+      return this.command("speed_limit_activate", { pin });
     } else {
       return Promise.reject("Invalid PIN format");
     }
   }
 
-  speedLimitDeactivate() {
-    return this.post("/command/speed_limit_deactivate", { pin: this.speed_limit_pin });
+  deactivateSpeedLimit() {
+    return this.command("speed_limit_deactivate", { pin: this.speed_limit_pin });
   }
 
-  setSentryMode(data) {
-    return this.post("/command/set_sentry_mode", data)
+  navigationRequest(address) {
+    return this.command("navigation_request", {
+      type: 'share_ext_content_raw',
+      locale: 'en-US',
+      timestamp_ms: new Date().getTime(),
+      value: { 'android.intent.extra.TEXT': address }
+    });
   }
 
-  sentryModeOn() {
-    return this.setSentryMode({on: true});
+  setSentryMode(on) {
+    return this.command("set_sentry_mode", { on });
   }
 
-  sentryModeOff() {
-    return this.setSentryMode({on: false});
+  // Media
+
+  mediaTogglePlayback() {
+    return this.command("media_toggle_playback");
   }
 
-  scheduleSoftwareUpdate(data = {offset_sec: 1}) {
-    return this.post("/command/schedule_software_update", data);
+  mediaNextTrack() {
+    return this.command("media_next_track");
+  }
+
+  mediaPrevTrack() {
+    return this.command("media_prev_track");
+  }
+
+  mediaNextFav() {
+    return this.command("media_next_fav");
+  }
+
+  mediaPrevFav() {
+    return this.command("media_prev_fav");
+  }
+
+  mediaVolumeUp() {
+    return this.command("media_volume_up");
+  }
+
+  mediaVolumeDown() {
+    return this.command("media_volume_down");
+  }
+
+  // Software Updates
+
+  scheduleSoftwareUpdate(offset_sec = 1) {
+    return this.command("schedule_software_update", { offset_sec });
   }
 
   cancelSoftwareUpdate() {
-    return this.post("/command/cancel_software_update");
+    return this.command("cancel_software_update");
   }
+
+  // Summon/Autopark
 
   async autopark() {
     await this.refresh();

@@ -1,9 +1,10 @@
 import utils from "../utils"
 
-export var convertToCamelCase = [
+export const convertToCamelCase = [
   function success(res) {
-    res.data = convert(res.data)
-    return res
+    return {
+      data: convert(res.data)
+    }
   }
 ]
 

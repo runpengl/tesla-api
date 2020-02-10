@@ -53,23 +53,19 @@ export default class Tesla {
     });
   }
 
-  async vehicles() {
-    const res = await request.get("/vehicles");
-    return res.data.response.map(v => new Vehicle(this, v));
+  vehicles() {
+    return request.get("/vehicles")
+      .then(res => res.data.response.map(v => new Vehicle(this, v)));
   }
 
-  async getVehicle(vehicleId = "") {
-    const vehicles = await this.vehicles();
-    if (vehicleId) {
-      return vehicles.find(v => v.vehicleId === vehicleId);
-    } else {
-      return vehicles[0];
-    }
+  getVehicle(vehicleId = "") {
+    return this.vehicles()
+      .then(vehicles => vehicleId ? vehicles.find(v => v.vehicleId === vehicleId) : vehicles[0])
   }
 
-  async products() {
-    const res = await request.get("/products");
-    return res.data.response;
+  products() {
+    return request.get("/products")
+      .then(res => res.data.response);
   }
 
   summon(vehicle) {
